@@ -1,8 +1,9 @@
 package main
 
 import (
-	"gtcrn-denoise-go/denoise"
 	"log"
+
+	"github.com/hackers365/gtcrn-denoise-go/denoise"
 )
 
 func appendSamples(dst []float32, src []float32) []float32 {

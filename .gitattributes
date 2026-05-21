@@ -4,4 +4,6 @@
 *.mod text eol=lf
 *.md text eol=lf
 *.sh text eol=lf
+*.h text eol=lf
+*.a binary
 .gitignore text eol=lf

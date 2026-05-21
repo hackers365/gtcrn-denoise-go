@@ -4,5 +4,5 @@
 /*.wav
 /*.log
 
-denoise/native/lib/windows_amd64/*
-!denoise/native/lib/windows_amd64/.gitkeep
+denoise/native/lib/**/libonnxruntime*
+denoise/native/lib/**/onnxruntime*

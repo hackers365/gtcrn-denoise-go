@@ -1,8 +1,8 @@
 package denoise
 
 /*
-#cgo CFLAGS: -I${SRCDIR}/../../sherpa-onnx/sherpa-onnx/c-api
-#cgo linux LDFLAGS: -L${SRCDIR}/../../sherpa-onnx/build/lib -lsherpa-onnx-c-api -lsherpa-onnx-core -lkaldi-decoder-core -lkaldi-native-fbank-core -lsherpa-onnx-kaldifst-core -lsherpa-onnx-fstfar -lsherpa-onnx-fst -lcargs -lkissfft-float -lssentencepiece_core -lespeak-ng -lpiper_phonemize -lucd -lonnxruntime -lstdc++ -lm -ldl -Wl,-rpath,${SRCDIR}/../../sherpa-onnx/build/lib
+#cgo CFLAGS: -I${SRCDIR}/native/include
+#cgo linux,amd64 LDFLAGS: -L${SRCDIR}/native/lib/linux_amd64 -lsherpa-onnx-c-api -lsherpa-onnx-core -lkaldi-decoder-core -lkaldi-native-fbank-core -lsherpa-onnx-kaldifst-core -lsherpa-onnx-fstfar -lsherpa-onnx-fst -lcargs -lkissfft-float -lssentencepiece_core -lespeak-ng -lpiper_phonemize -lucd -lonnxruntime -lstdc++ -lm -ldl
 #cgo windows,amd64 LDFLAGS: -L${SRCDIR}/native/lib/windows_amd64 -lsherpa-onnx-c-api -lonnxruntime
 #include "c-api.h"
 #include <stdlib.h>
