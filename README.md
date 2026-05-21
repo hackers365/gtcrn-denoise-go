@@ -11,9 +11,9 @@ wrapper.
 go get github.com/hackers365/gtcrn-denoise-go
 ```
 
-The package vendors the modified sherpa-onnx C API header and sherpa-related
-Linux amd64 static libraries under `denoise/native`. `onnxruntime` is not
-vendored and must be provided by the build/runtime environment.
+The package vendors the modified sherpa-onnx C API header and sherpa native
+libraries under `denoise/native`. `onnxruntime` is not vendored and must be
+provided by the build/runtime environment.
 
 If `onnxruntime` is installed in a standard linker path, no extra flags are
 needed. Otherwise pass its library directory when building:
@@ -22,11 +22,19 @@ needed. Otherwise pass its library directory when building:
 CGO_ENABLED=1 CGO_LDFLAGS="-L/path/to/onnxruntime/lib" go build ./...
 ```
 
-At runtime, make sure `libonnxruntime.so` can be found, for example:
+At runtime, make sure the ONNX Runtime library can be found. On Linux:
 
 ```bash
 export LD_LIBRARY_PATH=/path/to/onnxruntime/lib:$LD_LIBRARY_PATH
 ```
+
+On macOS:
+
+```bash
+export DYLD_LIBRARY_PATH=/path/to/onnxruntime/lib:$DYLD_LIBRARY_PATH
+```
+
+On Windows, put `onnxruntime.dll` in `PATH` or beside the final executable.
 
 ## Usage
 
@@ -74,12 +82,17 @@ Current vendored native assets:
 
 - `denoise/native/include/c-api.h`
 - `denoise/native/lib/linux_amd64/*.a`
+- `denoise/native/lib/linux_amd64/libsherpa-onnx-c-api.so`
+- `denoise/native/lib/linux_arm64/libsherpa-onnx-c-api.so`
+- `denoise/native/lib/darwin_amd64/libsherpa-onnx-c-api.dylib`
+- `denoise/native/lib/darwin_arm64/libsherpa-onnx-c-api.dylib`
+- `denoise/native/lib/windows_amd64/sherpa-onnx-c-api.dll`
+- `denoise/native/lib/windows_amd64/sherpa-onnx-c-api.lib`
 
 Not vendored:
 
 - `onnxruntime`
 - GTCRN model files such as `gtcrn_simple.onnx`
 
-Windows support uses `denoise/native/lib/windows_amd64`. Put the sherpa-onnx
-Windows import library/DLL there when available. Keep `onnxruntime.dll` and
-`onnxruntime.lib` outside the repo and provide them through `PATH`/linker flags.
+Keep `onnxruntime` outside the repo and provide it through runtime search paths
+and linker flags when it is not installed in a standard location.

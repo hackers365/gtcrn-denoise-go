@@ -2,7 +2,10 @@ package denoise
 
 /*
 #cgo CFLAGS: -I${SRCDIR}/native/include
-#cgo linux,amd64 LDFLAGS: -L${SRCDIR}/native/lib/linux_amd64 -lsherpa-onnx-c-api -lsherpa-onnx-core -lkaldi-decoder-core -lkaldi-native-fbank-core -lsherpa-onnx-kaldifst-core -lsherpa-onnx-fstfar -lsherpa-onnx-fst -lcargs -lkissfft-float -lssentencepiece_core -lespeak-ng -lpiper_phonemize -lucd -lonnxruntime -lstdc++ -lm -ldl
+#cgo linux,amd64 LDFLAGS: -L${SRCDIR}/native/lib/linux_amd64 -Wl,-Bstatic -lsherpa-onnx-c-api -lsherpa-onnx-core -lkaldi-decoder-core -lkaldi-native-fbank-core -lsherpa-onnx-kaldifst-core -lsherpa-onnx-fstfar -lsherpa-onnx-fst -lcargs -lkissfft-float -lssentencepiece_core -lespeak-ng -lpiper_phonemize -lucd -Wl,-Bdynamic -lonnxruntime -lstdc++ -lm -ldl
+#cgo linux,arm64 LDFLAGS: -L${SRCDIR}/native/lib/linux_arm64 -lsherpa-onnx-c-api -lonnxruntime -lstdc++ -lm -ldl -Wl,-rpath,${SRCDIR}/native/lib/linux_arm64
+#cgo darwin,amd64 LDFLAGS: -L${SRCDIR}/native/lib/darwin_amd64 -lsherpa-onnx-c-api -lonnxruntime -lc++ -framework Foundation -Wl,-rpath,${SRCDIR}/native/lib/darwin_amd64
+#cgo darwin,arm64 LDFLAGS: -L${SRCDIR}/native/lib/darwin_arm64 -lsherpa-onnx-c-api -lonnxruntime -lc++ -framework Foundation -Wl,-rpath,${SRCDIR}/native/lib/darwin_arm64
 #cgo windows,amd64 LDFLAGS: -L${SRCDIR}/native/lib/windows_amd64 -lsherpa-onnx-c-api -lonnxruntime
 #include "c-api.h"
 #include <stdlib.h>
