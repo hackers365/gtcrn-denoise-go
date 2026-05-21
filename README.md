@@ -34,7 +34,10 @@ On macOS:
 export DYLD_LIBRARY_PATH=/path/to/onnxruntime/lib:$DYLD_LIBRARY_PATH
 ```
 
-On Windows, put `onnxruntime.dll` in `PATH` or beside the final executable.
+On Windows, prefer putting the matching `onnxruntime.dll` beside the final
+executable. A stale `C:\Windows\System32\onnxruntime.dll` can be loaded before
+entries from `PATH`, causing model load failures even when a newer runtime is in
+`PATH`.
 
 ## Usage
 
