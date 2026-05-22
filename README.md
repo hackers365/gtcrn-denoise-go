@@ -79,6 +79,28 @@ enhanced, err := stream.ProcessInt16(pcmInt16, 16000)
 tail, err := stream.FlushInt16()
 ```
 
+To let the caller control output buffer reuse, use the append-style APIs:
+
+```go
+buf := make([]float32, 0, engine.FrameShiftInSamples())
+
+buf = buf[:0]
+buf, err = stream.ProcessAppend(buf, pcmFloat32, 16000)
+
+buf, err = stream.FlushAppend(buf[:0])
+```
+
+For `int16` PCM:
+
+```go
+pcmOut := make([]int16, 0, len(pcmInt16))
+pcmOut, err = stream.ProcessInt16Append(pcmOut[:0], pcmInt16, 16000)
+```
+
+The native denoiser still returns a temporary C buffer that must be copied
+before it is released, but the Go-side output allocation can now be owned and
+reused by the caller.
+
 ## Native libraries
 
 Current vendored native assets:

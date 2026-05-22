@@ -93,47 +93,63 @@ func (e *Engine) Close() {
 }
 
 func (s *Stream) Process(samples []float32, sampleRate int) ([]float32, error) {
+	return s.ProcessAppend(nil, samples, sampleRate)
+}
+
+func (s *Stream) ProcessAppend(dst []float32, samples []float32, sampleRate int) ([]float32, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if s.impl == nil {
-		return nil, ErrClosed
+		return dst, ErrClosed
 	}
 
 	if sampleRate <= 0 {
 		sampleRate = s.sampleRate
 	}
 
-	return runStream(s.impl, samples, sampleRate), nil
+	return runStreamAppend(dst, s.impl, samples, sampleRate), nil
 }
 
 func (s *Stream) ProcessInt16(samples []int16, sampleRate int) ([]int16, error) {
+	return s.ProcessInt16Append(nil, samples, sampleRate)
+}
+
+func (s *Stream) ProcessInt16Append(dst []int16, samples []int16, sampleRate int) ([]int16, error) {
 	enhanced, err := s.Process(Int16ToFloat32(samples), sampleRate)
 	if err != nil {
-		return nil, err
+		return dst, err
 	}
 
-	return Float32ToInt16(enhanced), nil
+	return Float32ToInt16Append(dst, enhanced), nil
 }
 
 func (s *Stream) Flush() ([]float32, error) {
+	return s.FlushAppend(nil)
+}
+
+func (s *Stream) FlushAppend(dst []float32) ([]float32, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if s.impl == nil {
-		return nil, ErrClosed
+		return dst, ErrClosed
 	}
 
-	return flushStream(s.impl), nil
+	return flushStreamAppend(dst, s.impl), nil
 }
 
 func (s *Stream) FlushInt16() ([]int16, error) {
+	return s.FlushInt16Append(nil)
+}
+
+func (s *Stream) FlushInt16Append(dst []int16) ([]int16, error) {
 	enhanced, err := s.Flush()
 	if err != nil {
-		return nil, err
+		return dst, err
 	}
 
-	return Float32ToInt16(enhanced), nil
+	return Float32ToInt16Append(dst, enhanced), nil
 }
 
 func (s *Stream) Reset() error {
@@ -161,33 +177,65 @@ func (s *Stream) Close() {
 }
 
 func Int16ToFloat32(samples []int16) []float32 {
+	return Int16ToFloat32Append(nil, samples)
+}
+
+func Int16ToFloat32Append(dst []float32, samples []int16) []float32 {
 	if len(samples) == 0 {
-		return nil
+		return dst
 	}
 
-	out := make([]float32, len(samples))
+	base := len(dst)
+	out := growFloat32(dst, len(samples))
 	for i, sample := range samples {
-		out[i] = float32(sample) / 32768.0
+		out[base+i] = float32(sample) / 32768.0
 	}
 	return out
 }
 
 func Float32ToInt16(samples []float32) []int16 {
+	return Float32ToInt16Append(nil, samples)
+}
+
+func Float32ToInt16Append(dst []int16, samples []float32) []int16 {
 	if len(samples) == 0 {
-		return nil
+		return dst
 	}
 
-	out := make([]int16, len(samples))
+	base := len(dst)
+	out := growInt16(dst, len(samples))
 	for i, sample := range samples {
 		if sample >= 1 {
-			out[i] = math.MaxInt16
+			out[base+i] = math.MaxInt16
 			continue
 		}
 		if sample <= -1 {
-			out[i] = math.MinInt16
+			out[base+i] = math.MinInt16
 			continue
 		}
-		out[i] = int16(math.Round(float64(sample * 32767.0)))
+		out[base+i] = int16(math.Round(float64(sample * 32767.0)))
 	}
+	return out
+}
+
+func growFloat32(dst []float32, n int) []float32 {
+	need := len(dst) + n
+	if need <= cap(dst) {
+		return dst[:need]
+	}
+
+	out := make([]float32, need)
+	copy(out, dst)
+	return out
+}
+
+func growInt16(dst []int16, n int) []int16 {
+	need := len(dst) + n
+	if need <= cap(dst) {
+		return dst[:need]
+	}
+
+	out := make([]int16, need)
+	copy(out, dst)
 	return out
 }

@@ -67,8 +67,12 @@ func destroyStream(ptr unsafe.Pointer) {
 }
 
 func runStream(ptr unsafe.Pointer, samples []float32, sampleRate int) []float32 {
+	return runStreamAppend(nil, ptr, samples, sampleRate)
+}
+
+func runStreamAppend(dst []float32, ptr unsafe.Pointer, samples []float32, sampleRate int) []float32 {
 	if ptr == nil {
-		return nil
+		return dst
 	}
 
 	audio := C.SherpaOnnxOnlineSpeechDenoiserStreamRun(
@@ -77,18 +81,22 @@ func runStream(ptr unsafe.Pointer, samples []float32, sampleRate int) []float32 
 		C.int32_t(len(samples)),
 		C.int32_t(sampleRate),
 	)
-	return denoisedAudio(audio)
+	return denoisedAudioAppend(dst, audio)
 }
 
 func flushStream(ptr unsafe.Pointer) []float32 {
+	return flushStreamAppend(nil, ptr)
+}
+
+func flushStreamAppend(dst []float32, ptr unsafe.Pointer) []float32 {
 	if ptr == nil {
-		return nil
+		return dst
 	}
 
 	audio := C.SherpaOnnxOnlineSpeechDenoiserStreamFlush(
 		(*C.SherpaOnnxOnlineSpeechDenoiserStream)(ptr),
 	)
-	return denoisedAudio(audio)
+	return denoisedAudioAppend(dst, audio)
 }
 
 func resetStream(ptr unsafe.Pointer) {
@@ -106,18 +114,23 @@ func floatPointer(samples []float32) *C.float {
 }
 
 func denoisedAudio(audio *C.SherpaOnnxDenoisedAudio) []float32 {
+	return denoisedAudioAppend(nil, audio)
+}
+
+func denoisedAudioAppend(dst []float32, audio *C.SherpaOnnxDenoisedAudio) []float32 {
 	if audio == nil {
-		return nil
+		return dst
 	}
 	defer C.SherpaOnnxDestroyDenoisedAudio(audio)
 
 	n := int(audio.n)
 	if n == 0 || audio.samples == nil {
-		return nil
+		return dst
 	}
 
-	out := make([]float32, n)
+	base := len(dst)
+	out := growFloat32(dst, n)
 	samples := unsafe.Slice((*float32)(unsafe.Pointer(audio.samples)), n)
-	copy(out, samples)
+	copy(out[base:], samples)
 	return out
 }
