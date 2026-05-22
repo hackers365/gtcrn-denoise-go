@@ -106,7 +106,6 @@ reused by the caller.
 Current vendored native assets:
 
 - `denoise/native/include/c-api.h`
-- `denoise/native/lib/linux_amd64/*.a`
 - `denoise/native/lib/linux_amd64/libsherpa-onnx-c-api.so`
 - `denoise/native/lib/linux_arm64/libsherpa-onnx-c-api.so`
 - `denoise/native/lib/darwin_amd64/libsherpa-onnx-c-api.dylib`
