@@ -4,6 +4,8 @@ import (
 	"errors"
 	"reflect"
 	"testing"
+
+	sherpa "github.com/hackers365/sherpa-onnx-go/sherpa_onnx"
 )
 
 func TestInt16ToFloat32AppendUsesDestinationBuffer(t *testing.T) {
@@ -66,5 +68,31 @@ func TestStreamAppendMethodsReturnErrClosed(t *testing.T) {
 		t.Fatalf("FlushInt16Append err = %v, want ErrClosed", err)
 	} else if !reflect.DeepEqual(out, intDst) {
 		t.Fatalf("FlushInt16Append out = %#v, want original dst %#v", out, intDst)
+	}
+}
+
+func TestToSherpaConfig(t *testing.T) {
+	got := toSherpaConfig(Config{
+		ModelPath:  "model.onnx",
+		PoolSize:   3,
+		NumThreads: 2,
+		Debug:      true,
+		Provider:   "cpu",
+	})
+
+	want := sherpa.OnlineSpeechDenoiserConfig{
+		Model: sherpa.OnlineSpeechDenoiserModelConfig{
+			Gtcrn: sherpa.OnlineSpeechDenoiserGtcrnModelConfig{
+				Model: "model.onnx",
+			},
+			NumThreads: 2,
+			Debug:      1,
+			Provider:   "cpu",
+		},
+		PoolSize: 3,
+	}
+
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("toSherpaConfig() = %#v, want %#v", got, want)
 	}
 }

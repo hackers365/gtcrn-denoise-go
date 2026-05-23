@@ -4,7 +4,8 @@ import (
 	"errors"
 	"math"
 	"sync"
-	"unsafe"
+
+	sherpa "github.com/hackers365/sherpa-onnx-go/sherpa_onnx"
 )
 
 var (
@@ -21,14 +22,14 @@ type Config struct {
 
 type Engine struct {
 	mu         sync.Mutex
-	impl       unsafe.Pointer
+	impl       *sherpa.OnlineSpeechDenoiserEngine
 	sampleRate int
 	frameShift int
 }
 
 type Stream struct {
 	mu         sync.Mutex
-	impl       unsafe.Pointer
+	impl       *sherpa.OnlineSpeechDenoiserStream
 	sampleRate int
 }
 
@@ -37,15 +38,16 @@ func NewEngine(config Config) (*Engine, error) {
 		return nil, errors.New("denoise: model path is empty")
 	}
 
-	impl, sampleRate, frameShift := createEngine(config)
+	sherpaConfig := toSherpaConfig(config)
+	impl := sherpa.NewOnlineSpeechDenoiserEngine(&sherpaConfig)
 	if impl == nil {
 		return nil, errors.New("denoise: failed to create online speech denoiser engine")
 	}
 
 	return &Engine{
 		impl:       impl,
-		sampleRate: sampleRate,
-		frameShift: frameShift,
+		sampleRate: impl.SampleRate(),
+		frameShift: impl.FrameShiftInSamples(),
 	}, nil
 }
 
@@ -57,7 +59,7 @@ func (e *Engine) NewStream() (*Stream, error) {
 		return nil, ErrClosed
 	}
 
-	impl := createStream(e.impl)
+	impl := e.impl.CreateStream()
 	if impl == nil {
 		return nil, errors.New("denoise: failed to create stream")
 	}
@@ -88,7 +90,7 @@ func (e *Engine) Close() {
 		return
 	}
 
-	destroyEngine(e.impl)
+	sherpa.DeleteOnlineSpeechDenoiserEngine(e.impl)
 	e.impl = nil
 }
 
@@ -108,7 +110,7 @@ func (s *Stream) ProcessAppend(dst []float32, samples []float32, sampleRate int)
 		sampleRate = s.sampleRate
 	}
 
-	return runStreamAppend(dst, s.impl, samples, sampleRate), nil
+	return appendDenoisedAudio(dst, s.impl.Run(samples, sampleRate)), nil
 }
 
 func (s *Stream) ProcessInt16(samples []int16, sampleRate int) ([]int16, error) {
@@ -136,7 +138,7 @@ func (s *Stream) FlushAppend(dst []float32) ([]float32, error) {
 		return dst, ErrClosed
 	}
 
-	return flushStreamAppend(dst, s.impl), nil
+	return appendDenoisedAudio(dst, s.impl.Flush()), nil
 }
 
 func (s *Stream) FlushInt16() ([]int16, error) {
@@ -160,7 +162,7 @@ func (s *Stream) Reset() error {
 		return ErrClosed
 	}
 
-	resetStream(s.impl)
+	s.impl.Reset()
 	return nil
 }
 
@@ -172,8 +174,40 @@ func (s *Stream) Close() {
 		return
 	}
 
-	destroyStream(s.impl)
+	sherpa.DeleteOnlineSpeechDenoiserStream(s.impl)
 	s.impl = nil
+}
+
+func toSherpaConfig(config Config) sherpa.OnlineSpeechDenoiserConfig {
+	return sherpa.OnlineSpeechDenoiserConfig{
+		Model: sherpa.OnlineSpeechDenoiserModelConfig{
+			Gtcrn: sherpa.OnlineSpeechDenoiserGtcrnModelConfig{
+				Model: config.ModelPath,
+			},
+			NumThreads: int32(config.NumThreads),
+			Debug:      boolToDebugInt32(config.Debug),
+			Provider:   config.Provider,
+		},
+		PoolSize: int32(config.PoolSize),
+	}
+}
+
+func boolToDebugInt32(v bool) int32 {
+	if v {
+		return 1
+	}
+	return 0
+}
+
+func appendDenoisedAudio(dst []float32, audio *sherpa.DenoisedAudio) []float32 {
+	if audio == nil || len(audio.Samples) == 0 {
+		return dst
+	}
+
+	base := len(dst)
+	out := growFloat32(dst, len(audio.Samples))
+	copy(out[base:], audio.Samples)
+	return out
 }
 
 func Int16ToFloat32(samples []int16) []float32 {
